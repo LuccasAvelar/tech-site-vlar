@@ -14,22 +14,14 @@ import { useRouter } from "next/navigation"
 export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [captchaVerified, setCaptchaVerified] = useState(false)
-  const router = useRouter()
-
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   })
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!captchaVerified) {
-      alert("Por favor, complete a verificação de segurança")
-      return
-    }
-
     setIsLoading(true)
 
     try {
@@ -46,15 +38,10 @@ export default function AdminLoginPage() {
       }
     } catch (error) {
       console.error("Erro no login:", error)
-      alert("Erro no login")
+      alert("Erro ao fazer login")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Simulação do captcha (em produção, use Cloudflare Turnstile)
-  const handleCaptcha = () => {
-    setCaptchaVerified(true)
   }
 
   return (
@@ -67,9 +54,11 @@ export default function AdminLoginPage() {
       >
         <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent flex items-center justify-center">
-              <Shield className="h-6 w-6 mr-2 text-red-400" />
-              Admin Login
+            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mb-4">
+              <Shield className="h-6 w-6 text-black" />
+            </div>
+            <CardTitle className="text-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              Admin - Vlar
             </CardTitle>
             <CardDescription className="text-gray-400">Acesso restrito para administradores</CardDescription>
           </CardHeader>
@@ -84,7 +73,7 @@ export default function AdminLoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@techstore.com"
+                    placeholder="admin@vlar.com"
                     value={loginData.email}
                     onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                     className="pl-10 bg-gray-700 border-gray-600 text-white"
@@ -120,33 +109,24 @@ export default function AdminLoginPage() {
                 </div>
               </div>
 
-              {/* Simulação do Captcha */}
-              <div className="space-y-2">
-                <Label className="text-gray-300">Verificação de Segurança</Label>
-                <div className="bg-gray-700 border border-gray-600 rounded p-4 text-center">
-                  {!captchaVerified ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCaptcha}
-                      className="border-gray-500 text-gray-300 bg-transparent"
-                    >
-                      ☐ Não sou um robô
-                    </Button>
-                  ) : (
-                    <div className="text-green-400 flex items-center justify-center">✓ Verificação concluída</div>
-                  )}
-                </div>
-              </div>
-
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-red-400 to-orange-500 text-white hover:from-red-500 hover:to-orange-600"
-                disabled={isLoading || !captchaVerified}
+                className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600"
+                disabled={isLoading}
               >
-                {isLoading ? "Entrando..." : "Entrar como Admin"}
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-sm">
+                Credenciais de teste:
+                <br />
+                <span className="text-cyan-400">vlartech@gmail.com</span>
+                <br />
+                <span className="text-cyan-400">Lc157849</span>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

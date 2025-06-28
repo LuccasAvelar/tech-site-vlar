@@ -6,7 +6,7 @@ import ProductGrid from "@/components/product-grid"
 import Header from "@/components/header"
 import WhatsAppButton from "@/components/whatsapp-button"
 import BannerCarousel from "@/components/banner-carousel"
-import CategoryShowcase from "@/components/category-showcase"
+import FeaturedProducts from "@/components/featured-products"
 import type { Product, Banner } from "@/types"
 
 export default function HomePage() {
@@ -42,19 +42,33 @@ export default function HomePage() {
         {/* Banner Principal */}
         <BannerCarousel banners={banners} />
 
-        {/* Showcase de Categorias */}
-        <CategoryShowcase />
-
-        {/* Produtos em Destaque */}
-        <section className="container mx-auto px-4 py-8">
+        {/* Produtos em Destaque - Carrossel Horizontal */}
+        <section className="container mx-auto px-4 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center mb-8"
           >
-            <h2 className="text-3xl font-bold text-white mb-4">Produtos em Destaque</h2>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-4">
+              Produtos em Destaque
+            </h2>
             <p className="text-gray-300">Confira nossa seleção especial</p>
+          </motion.div>
+
+          <FeaturedProducts products={products.slice(0, 8)} />
+        </section>
+
+        {/* Todos os Produtos */}
+        <section className="container mx-auto px-4 py-12 border-t border-gray-800">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">Todos os Produtos</h2>
+            <p className="text-gray-300">Explore nosso catálogo completo</p>
           </motion.div>
 
           {loading ? (

@@ -34,13 +34,14 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10,2) NOT NULL,
     image TEXT,
     images TEXT[], -- Array de imagens
+    category VARCHAR(255),
     category_id INTEGER REFERENCES categories(id),
     stock INTEGER DEFAULT 0,
     sku VARCHAR(100) UNIQUE,
     is_active BOOLEAN DEFAULT TRUE,
     weight DECIMAL(8,3),
     dimensions VARCHAR(100),
-    brand VARCHAR(100),
+    brand VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -52,9 +53,10 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_name VARCHAR(255),
     customer_email VARCHAR(255),
     customer_phone VARCHAR(20),
+    products JSONB,
     total DECIMAL(10,2) NOT NULL,
     payment_method VARCHAR(50),
-    installments INTEGER DEFAULT 1,
+    installments VARCHAR(10),
     address TEXT,
     coupon_code VARCHAR(50),
     status VARCHAR(20) DEFAULT 'pending',
@@ -100,9 +102,9 @@ CREATE TABLE IF NOT EXISTS banners (
 -- Tabela de conteúdo editável
 CREATE TABLE IF NOT EXISTS site_content (
     id SERIAL PRIMARY KEY,
-    key VARCHAR(255) UNIQUE NOT NULL,
+    key VARCHAR(100) UNIQUE NOT NULL,
     value TEXT NOT NULL,
-    type VARCHAR(50) DEFAULT 'text',
+    type VARCHAR(20) DEFAULT 'text',
     label VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -131,31 +133,35 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Inserir usuário admin
-INSERT INTO users (name, email, password, is_admin)
-VALUES (
-    'Administrador Vlar',
-    'vlartech@gmail.com',
-    '$2a$10$YourHashedPasswordHere', -- Será atualizado no código
-    TRUE
-) ON CONFLICT (email) DO NOTHING;
+-- Inserir usuário admin padrão
+INSERT INTO users (name, email, password, is_admin) 
+VALUES ('Admin Vlar', 'vlartech@gmail.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', TRUE)
+ON CONFLICT (email) DO NOTHING;
 
 -- Inserir categorias padrão
 INSERT INTO categories (name, slug, sort_order) VALUES
 ('Hardware', 'hardware', 1),
-('Periféricos', 'perifericos', 2),
-('Notebooks', 'notebooks', 3),
-('Monitores', 'monitores', 4),
-('PC Gamer', 'pc-gamer', 5),
-('Armazenamento', 'armazenamento', 6)
+('Notebooks', 'notebooks', 2),
+('Monitores', 'monitores', 3),
+('Periféricos', 'perifericos', 4),
+('Componentes', 'componentes', 5)
 ON CONFLICT (slug) DO NOTHING;
 
--- Inserir conteúdo editável padrão
+-- Inserir conteúdo padrão do site
 INSERT INTO site_content (key, value, type, label, description) VALUES
-('site_title', 'Vlar', 'text', 'Título do Site', 'Nome principal da loja'),
-('site_subtitle', 'Os melhores produtos de tecnologia para você', 'text', 'Subtítulo', 'Descrição principal da loja'),
-('hero_title', 'Vlar', 'text', 'Título Principal', 'Título da página inicial'),
-('hero_description', 'Os melhores produtos de tecnologia para você', 'textarea', 'Descrição Principal', 'Descrição da página inicial'),
-('contact_phone', '5533998343132', 'text', 'WhatsApp da Loja', 'Número do WhatsApp para contato'),
-('footer_text', '© 2024 Vlar. Todos os direitos reservados.', 'text', 'Texto do Rodapé', 'Texto exibido no rodapé')
+('site_title', 'Vlar', 'text', 'Título do Site', 'Nome da loja exibido no cabeçalho'),
+('hero_title', 'Bem-vindo à Vlar', 'text', 'Título Principal', 'Título exibido na página inicial'),
+('hero_subtitle', 'Os melhores produtos de tecnologia para você', 'text', 'Subtítulo Principal', 'Subtítulo da página inicial'),
+('featured_title', 'Produtos em Destaque', 'text', 'Título Produtos Destaque', 'Título da seção de produtos em destaque'),
+('all_products_title', 'Todos os Produtos', 'text', 'Título Todos Produtos', 'Título da seção de todos os produtos'),
+('free_shipping_text', 'Frete grátis para compras acima de R$ 299', 'text', 'Texto Frete Grátis', 'Texto exibido no cabeçalho sobre frete grátis')
 ON CONFLICT (key) DO NOTHING;
+
+-- Inserir produtos de exemplo
+INSERT INTO products (name, description, price, category, stock, image) VALUES
+('Notebook Gamer', 'Notebook para jogos com alta performance', 2999.99, 'Notebooks', 10, '/placeholder.svg?height=300&width=300'),
+('Monitor 24"', 'Monitor Full HD de 24 polegadas', 599.99, 'Monitores', 15, '/placeholder.svg?height=300&width=300'),
+('Teclado Mecânico', 'Teclado mecânico RGB para gamers', 299.99, 'Periféricos', 25, '/placeholder.svg?height=300&width=300'),
+('Mouse Gamer', 'Mouse óptico de alta precisão', 149.99, 'Periféricos', 30, '/placeholder.svg?height=300&width=300'),
+('Placa de Vídeo', 'GPU de última geração para jogos', 1899.99, 'Hardware', 5, '/placeholder.svg?height=300&width=300')
+ON CONFLICT (sku) DO NOTHING;
