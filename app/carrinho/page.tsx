@@ -15,15 +15,21 @@ import { useCart } from "@/hooks/use-cart"
 import { useAuth } from "@/hooks/use-auth"
 import { formatPrice } from "@/lib/utils"
 import Header from "@/components/header"
+import Link from "next/link"
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, total, clearCart } = useCart()
+  const { items, updateQuantity, removeFromCart } = useCart()
   const { user } = useAuth()
   const [selectedItems, setSelectedItems] = useState<string[]>(items.map((item) => item.id))
   const [paymentMethod, setPaymentMethod] = useState("")
   const [installments, setInstallments] = useState("1")
   const [couponCode, setCouponCode] = useState("")
-  const [address, setAddress] = useState("")
+  const [guestData, setGuestData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  })
 
   const handleItemSelect = (itemId: string, checked: boolean) => {
     if (checked) {
@@ -38,21 +44,25 @@ export default function CartPage() {
     .reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   const handleCheckout = async () => {
-    if (!user) {
-      alert("Você precisa estar logado para finalizar a compra")
+    const selectedProducts = items.filter((item) => selectedItems.includes(item.id))
+
+    // Dados do cliente (logado ou convidado)
+    const customerData = user || guestData
+
+    if (!customerData.name || !customerData.email || !guestData.address) {
+      alert("Preencha todos os dados obrigatórios")
       return
     }
-
-    const selectedProducts = items.filter((item) => selectedItems.includes(item.id))
 
     const orderData = {
       products: selectedProducts,
       total: selectedTotal,
       paymentMethod,
       installments: paymentMethod === "credit" ? installments : "1",
-      address,
+      address: guestData.address,
       couponCode,
-      user: user,
+      customer: customerData,
+      isGuest: !user,
     }
 
     try {
@@ -64,7 +74,6 @@ export default function CartPage() {
 
       if (response.ok) {
         alert("Pedido realizado com sucesso! Você receberá uma confirmação em breve.")
-        // Remove selected items from cart
         selectedProducts.forEach((item) => removeFromCart(item.id))
         setSelectedItems([])
       }
@@ -83,7 +92,7 @@ export default function CartPage() {
             <h1 className="text-3xl font-bold text-white mb-4">Carrinho Vazio</h1>
             <p className="text-gray-400 mb-8">Adicione alguns produtos ao seu carrinho</p>
             <Button asChild className="bg-gradient-to-r from-cyan-400 to-blue-500 text-black">
-              <a href="/">Continuar Comprando</a>
+              <Link href="/">Continuar Comprando</Link>
             </Button>
           </div>
         </div>
@@ -175,9 +184,49 @@ export default function CartPage() {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
             <Card className="bg-gray-800/50 border-gray-700 sticky top-24">
               <CardHeader>
-                <CardTitle className="text-white">Resumo do Pedido</CardTitle>
+                <CardTitle className="text-white">Finalizar Compra</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Dados do Cliente */}
+                {!user && (
+                  <div className="space-y-4 border-b border-gray-600 pb-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-gray-300">Dados do Cliente</Label>
+                      <Link href="/login" className="text-cyan-400 text-sm hover:underline">
+                        Já tem conta? Faça login
+                      </Link>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Nome completo"
+                        value={guestData.name}
+                        onChange={(e) => setGuestData({ ...guestData, name: e.target.value })}
+                        className="bg-gray-700 border-gray-600 text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={guestData.email}
+                        onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
+                        className="bg-gray-700 border-gray-600 text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Telefone"
+                        value={guestData.phone}
+                        onChange={(e) => setGuestData({ ...guestData, phone: e.target.value })}
+                        className="bg-gray-700 border-gray-600 text-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Cupom */}
                 <div className="space-y-2">
                   <Label className="text-gray-300">Cupom de Desconto</Label>
@@ -188,7 +237,7 @@ export default function CartPage() {
                       onChange={(e) => setCouponCode(e.target.value)}
                       className="bg-gray-700 border-gray-600 text-white"
                     />
-                    <Button variant="outline" className="border-gray-600">
+                    <Button variant="outline" className="border-gray-600 bg-transparent">
                       Aplicar
                     </Button>
                   </div>
@@ -199,8 +248,8 @@ export default function CartPage() {
                   <Label className="text-gray-300">Endereço de Entrega</Label>
                   <Input
                     placeholder="Digite seu endereço completo"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={guestData.address}
+                    onChange={(e) => setGuestData({ ...guestData, address: e.target.value })}
                     className="bg-gray-700 border-gray-600 text-white"
                   />
                 </div>
@@ -266,7 +315,7 @@ export default function CartPage() {
                 <Button
                   onClick={handleCheckout}
                   className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600"
-                  disabled={selectedItems.length === 0 || !paymentMethod || !address}
+                  disabled={selectedItems.length === 0 || !paymentMethod || !guestData.address}
                 >
                   Finalizar Compra
                 </Button>
