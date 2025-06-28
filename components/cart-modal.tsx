@@ -1,17 +1,9 @@
 "use client"
-
 import { useState } from "react"
-import Image from "next/image"
-import { Trash2, Plus, Minus, CreditCard, Smartphone } from "lucide-react"
+import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCart } from "@/hooks/use-cart"
-import { useAuth } from "@/hooks/use-auth"
 import { formatPrice } from "@/lib/utils"
 
 interface CartModalProps {
@@ -20,82 +12,33 @@ interface CartModalProps {
 }
 
 export default function CartModal({ open, onOpenChange }: CartModalProps) {
-  const { items, updateQuantity, removeFromCart } = useCart()
-  const { user } = useAuth()
-  const [selectedItems, setSelectedItems] = useState<string[]>(items.map((item) => item.id))
-  const [paymentMethod, setPaymentMethod] = useState("")
-  const [installments, setInstallments] = useState("1")
-  const [couponCode, setCouponCode] = useState("")
-  const [guestData, setGuestData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-  })
-
-  const handleItemSelect = (itemId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedItems([...selectedItems, itemId])
-    } else {
-      setSelectedItems(selectedItems.filter((id) => id !== itemId))
-    }
-  }
-
-  const selectedTotal = items
-    .filter((item) => selectedItems.includes(item.id))
-    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const { items, updateQuantity, removeItem, total, clearCart } = useCart()
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleCheckout = async () => {
-    const selectedProducts = items.filter((item) => selectedItems.includes(item.id))
-    const customerData = user || guestData
-
-    if (!customerData.name || !customerData.email || !guestData.address) {
-      alert("Preencha todos os dados obrigatórios")
-      return
-    }
-
-    const orderData = {
-      products: selectedProducts,
-      total: selectedTotal,
-      paymentMethod,
-      installments: paymentMethod === "credit" ? installments : "1",
-      address: guestData.address,
-      couponCode,
-      customer: customerData,
-      isGuest: !user,
-    }
-
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      })
-
-      if (response.ok) {
-        alert("Pedido realizado com sucesso!")
-        selectedProducts.forEach((item) => removeFromCart(item.id))
-        setSelectedItems([])
-        onOpenChange(false)
-      }
-    } catch (error) {
-      console.error("Erro ao finalizar pedido:", error)
-      alert("Erro ao finalizar pedido. Tente novamente.")
-    }
+    setIsLoading(true)
+    // Simular processo de checkout
+    setTimeout(() => {
+      alert("Redirecionando para o checkout...")
+      setIsLoading(false)
+      onOpenChange(false)
+    }, 1000)
   }
 
   if (items.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700 text-white">
           <DialogHeader>
-            <DialogTitle className="text-center">Carrinho Vazio</DialogTitle>
+            <DialogTitle className="text-center text-xl text-gray-300">Seu Carrinho</DialogTitle>
           </DialogHeader>
-          <div className="text-center py-8">
-            <p className="text-gray-400 mb-4">Seu carrinho está vazio</p>
+
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <ShoppingBag className="h-16 w-16 text-gray-600" />
+            <p className="text-gray-400 text-center">Seu carrinho está vazio</p>
             <Button
               onClick={() => onOpenChange(false)}
-              className="bg-gradient-to-r from-cyan-400 to-blue-500 text-black"
+              className="bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600"
             >
               Continuar Comprando
             </Button>
@@ -107,150 +50,80 @@ export default function CartModal({ open, onOpenChange }: CartModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh]">
+      <DialogContent className="sm:max-w-lg bg-gray-900 border-gray-700 text-white max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            Carrinho de Compras
+          <DialogTitle className="text-center text-xl text-gray-300">
+            Seu Carrinho ({items.length} {items.length === 1 ? "item" : "itens"})
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Items do Carrinho */}
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                  <div className="flex items-center space-x-4">
-                    <Checkbox
-                      checked={selectedItems.includes(item.id)}
-                      onCheckedChange={(checked) => handleItemSelect(item.id, checked as boolean)}
-                    />
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center space-x-4 bg-gray-800 p-4 rounded-lg">
+              <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-16 h-16 object-cover rounded" />
 
-                    <div className="relative w-16 h-16 flex-shrink-0">
-                      <Image
-                        src={item.image || "/placeholder.svg?height=64&width=64"}
-                        alt={item.name}
-                        fill
-                        className="object-cover rounded"
-                      />
-                    </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-white truncate">{item.name}</h3>
+                <p className="text-cyan-400 font-bold">{formatPrice(item.price)}</p>
+              </div>
 
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-sm">{item.name}</h3>
-                      <p className="text-cyan-400 font-bold">{formatPrice(item.price)}</p>
-                    </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-gray-600 text-gray-300 bg-transparent"
+                  onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
 
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="h-6 w-6 border-gray-600"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-white w-6 text-center text-sm">{item.quantity}</span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="h-6 w-6 border-gray-600"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
+                <span className="w-8 text-center text-white">{item.quantity}</span>
 
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-400 hover:text-red-300 h-6 w-6"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-gray-600 text-gray-300 bg-transparent"
+                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-red-400 hover:text-red-300"
+                  onClick={() => removeItem(item.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
-          </ScrollArea>
+          ))}
+        </div>
 
-          {/* Checkout */}
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-4">
-              {/* Dados do Cliente */}
-              {!user && (
-                <div className="space-y-3">
-                  <Label className="text-gray-300">Dados do Cliente</Label>
-                  <Input
-                    placeholder="Nome completo"
-                    value={guestData.name}
-                    onChange={(e) => setGuestData({ ...guestData, name: e.target.value })}
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={guestData.email}
-                    onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
-                  <Input
-                    placeholder="Telefone"
-                    value={guestData.phone}
-                    onChange={(e) => setGuestData({ ...guestData, phone: e.target.value })}
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
-                </div>
-              )}
+        <div className="border-t border-gray-700 pt-4 space-y-4">
+          <div className="flex justify-between items-center text-lg font-bold">
+            <span className="text-gray-300">Total:</span>
+            <span className="text-cyan-400">{formatPrice(total)}</span>
+          </div>
 
-              {/* Endereço */}
-              <div className="space-y-2">
-                <Label className="text-gray-300">Endereço de Entrega</Label>
-                <Input
-                  placeholder="Digite seu endereço completo"
-                  value={guestData.address}
-                  onChange={(e) => setGuestData({ ...guestData, address: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                />
-              </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => clearCart()}
+              className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+            >
+              Limpar Carrinho
+            </Button>
 
-              {/* Método de Pagamento */}
-              <div className="space-y-3">
-                <Label className="text-gray-300">Método de Pagamento</Label>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="pix" id="pix" />
-                    <Label htmlFor="pix" className="flex items-center text-gray-300 text-sm">
-                      <Smartphone className="h-4 w-4 mr-2" />
-                      PIX
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="credit" id="credit" />
-                    <Label htmlFor="credit" className="flex items-center text-gray-300 text-sm">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Cartão de Crédito
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="border-t border-gray-600 pt-4">
-                <div className="flex justify-between text-white mb-2">
-                  <span>Total:</span>
-                  <span className="text-xl font-bold text-cyan-400">{formatPrice(selectedTotal)}</span>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600"
-                disabled={selectedItems.length === 0 || !paymentMethod || !guestData.address}
-              >
-                Finalizar Compra
-              </Button>
-            </div>
-          </ScrollArea>
+            <Button
+              onClick={handleCheckout}
+              disabled={isLoading}
+              className="flex-1 bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600"
+            >
+              {isLoading ? "Processando..." : "Finalizar Compra"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

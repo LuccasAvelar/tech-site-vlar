@@ -1,95 +1,124 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Banner } from "@/types"
 
-interface BannerCarouselProps {
-  banners: Banner[]
-}
+const banners = [
+  {
+    id: 1,
+    title: "Bem-vindo à Vlar",
+    subtitle: "Os melhores vaporizadores e produtos tech",
+    image: "/placeholder.svg",
+    cta: "Ver Produtos",
+    link: "#produtos",
+  },
+  {
+    id: 2,
+    title: "Novos Vaporizadores",
+    subtitle: "Descubra nossa linha premium",
+    image: "/placeholder.svg",
+    cta: "Explorar",
+    link: "/categoria/vaporizadores",
+  },
+  {
+    id: 3,
+    title: "Frete Grátis",
+    subtitle: "Em compras acima de R$ 299",
+    image: "/placeholder.svg",
+    cta: "Aproveitar",
+    link: "#",
+  },
+]
 
-export default function BannerCarousel({ banners }: BannerCarouselProps) {
+export default function BannerCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  // Auto-advance banners
   useEffect(() => {
-    if (banners.length === 0) return
-
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length)
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [banners.length])
+  }, [])
 
-  if (banners.length === 0) {
-    return (
-      <div className="relative h-96 bg-gradient-to-r from-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <h2 className="text-4xl font-bold mb-4">Bem-vindo à Vlar</h2>
-          <p className="text-xl">Os melhores produtos de tecnologia</p>
-        </div>
-      </div>
-    )
-  }
-
-  const nextSlide = () => {
+  const nextBanner = () => {
     setCurrentIndex((prev) => (prev + 1) % banners.length)
   }
 
-  const prevSlide = () => {
+  const prevBanner = () => {
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
   }
 
   return (
-    <div className="relative h-96 overflow-hidden">
+    <div className="relative h-96 md:h-[500px] overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, x: 300 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -300 }}
           transition={{ duration: 0.5 }}
           className="absolute inset-0"
         >
-          <Image
-            src={banners[currentIndex]?.image || "/placeholder.svg?height=400&width=1200"}
-            alt={banners[currentIndex]?.title || "Banner"}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30" />
-
-          {banners[currentIndex]?.title && (
+          <div
+            className="w-full h-full bg-cover bg-center relative"
+            style={{
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${banners[currentIndex].image})`,
+            }}
+          >
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-white">
-                <h2 className="text-5xl font-bold mb-4">{banners[currentIndex].title}</h2>
+              <div className="text-center text-white max-w-2xl px-4">
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
+                >
+                  {banners[currentIndex].title}
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-xl md:text-2xl mb-8 text-gray-200"
+                >
+                  {banners[currentIndex].subtitle}
+                </motion.p>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-cyan-400 to-blue-500 text-black hover:from-cyan-500 hover:to-blue-600 text-lg px-8 py-3"
+                  >
+                    {banners[currentIndex].cta}
+                  </Button>
+                </motion.div>
               </div>
             </div>
-          )}
+          </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation Arrows */}
+      {/* Navigation Buttons */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-        onClick={prevSlide}
+        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 border-gray-600 text-white hover:bg-gray-800"
+        onClick={prevBanner}
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-4 w-4" />
       </Button>
 
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-        onClick={nextSlide}
+        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 border-gray-600 text-white hover:bg-gray-800"
+        onClick={nextBanner}
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-4 w-4" />
       </Button>
 
       {/* Dots Indicator */}
@@ -97,7 +126,9 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
         {banners.map((_, index) => (
           <button
             key={index}
-            className={`w-3 h-3 rounded-full transition-colors ${index === currentIndex ? "bg-white" : "bg-white/50"}`}
+            className={`w-3 h-3 rounded-full transition-colors ${
+              index === currentIndex ? "bg-cyan-400" : "bg-white/50"
+            }`}
             onClick={() => setCurrentIndex(index)}
           />
         ))}

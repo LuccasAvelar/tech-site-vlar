@@ -1,9 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Eye, EyeOff, Mail, Lock, User, Calendar, Phone } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,21 +16,19 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
+  const { login, register } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { login, register } = useAuth()
-
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   })
-
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",
-    password: "",
     phone: "",
-    birthDate: "",
+    password: "",
+    confirmPassword: "",
   })
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,8 +38,10 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
     try {
       await login(loginData.email, loginData.password)
       onOpenChange(false)
+      setLoginData({ email: "", password: "" })
     } catch (error) {
       console.error("Erro no login:", error)
+      alert("Erro ao fazer login")
     } finally {
       setIsLoading(false)
     }
@@ -50,13 +49,21 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (registerData.password !== registerData.confirmPassword) {
+      alert("As senhas não coincidem")
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      await register(registerData)
+      await register(registerData.name, registerData.email, registerData.password, registerData.phone)
       onOpenChange(false)
+      setRegisterData({ name: "", email: "", phone: "", password: "", confirmPassword: "" })
     } catch (error) {
       console.error("Erro no cadastro:", error)
+      alert("Erro ao fazer cadastro")
     } finally {
       setIsLoading(false)
     }
@@ -64,9 +71,9 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+      <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700 text-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent text-center">
+          <DialogTitle className="text-center text-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
             Vlar
           </DialogTitle>
         </DialogHeader>
@@ -74,23 +81,23 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-800">
             <TabsTrigger value="login" className="data-[state=active]:bg-cyan-400 data-[state=active]:text-black">
-              Login
+              Entrar
             </TabsTrigger>
             <TabsTrigger value="register" className="data-[state=active]:bg-cyan-400 data-[state=active]:text-black">
-              Cadastro
+              Cadastrar
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="login">
+          <TabsContent value="login" className="space-y-4">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">
+                <Label htmlFor="login-email" className="text-gray-300">
                   Email
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="email"
+                    id="login-email"
                     type="email"
                     placeholder="seu@email.com"
                     value={loginData.email}
@@ -102,13 +109,13 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">
+                <Label htmlFor="login-password" className="text-gray-300">
                   Senha
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="password"
+                    id="login-password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Sua senha"
                     value={loginData.password}
@@ -138,16 +145,16 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
             </form>
           </TabsContent>
 
-          <TabsContent value="register">
+          <TabsContent value="register" className="space-y-4">
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-300">
+                <Label htmlFor="register-name" className="text-gray-300">
                   Nome Completo
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="name"
+                    id="register-name"
                     type="text"
                     placeholder="Seu nome completo"
                     value={registerData.name}
@@ -177,34 +184,17 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-gray-300">
+                <Label htmlFor="register-phone" className="text-gray-300">
                   Telefone
                 </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="phone"
+                    id="register-phone"
                     type="tel"
                     placeholder="(11) 99999-9999"
                     value={registerData.phone}
                     onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="birthDate" className="text-gray-300">
-                  Data de Nascimento
-                </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={registerData.birthDate}
-                    onChange={(e) => setRegisterData({ ...registerData, birthDate: e.target.value })}
                     className="pl-10 bg-gray-800 border-gray-600 text-white"
                     required
                   />
@@ -219,22 +209,31 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="register-password"
-                    type={showPassword ? "text" : "password"}
+                    type="password"
                     placeholder="Sua senha"
                     value={registerData.password}
                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                    className="pl-10 pr-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800 border-gray-600 text-white"
                     required
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-confirm-password" className="text-gray-300">
+                  Confirmar Senha
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="register-confirm-password"
+                    type="password"
+                    placeholder="Confirme sua senha"
+                    value={registerData.confirmPassword}
+                    onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    required
+                  />
                 </div>
               </div>
 

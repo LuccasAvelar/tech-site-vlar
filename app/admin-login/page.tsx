@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
       })
 
       if (response.ok) {
-        router.push("/admin")
+        router.push("/admin-user-modify")
       } else {
         alert("Credenciais inválidas")
       }
@@ -117,16 +117,6 @@ export default function AdminLoginPage() {
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-400 text-sm">
-                Credenciais de teste:
-                <br />
-                <span className="text-cyan-400">vlartech@gmail.com</span>
-                <br />
-                <span className="text-cyan-400">Lc157849</span>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

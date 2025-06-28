@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ShoppingCart, User, LogOut, Settings, Search, Menu, ChevronDown, Package } from "lucide-react"
+import { ShoppingCart, User, LogOut, Settings, Search, Menu, ChevronDown, Package, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,29 +21,67 @@ import { useAuth } from "@/hooks/use-auth"
 import { useCart } from "@/hooks/use-cart"
 import LoginModal from "@/components/login-modal"
 import CartModal from "@/components/cart-modal"
-import type { Category } from "@/types"
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth()
   const { itemCount } = useCart()
-  const [categories, setCategories] = useState<Category[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showCartModal, setShowCartModal] = useState(false)
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/categories")
-      const data = await response.json()
-      setCategories(data)
-    } catch (error) {
-      console.error("Erro ao carregar categorias:", error)
-    }
-  }
+  const categories = [
+    {
+      id: 1,
+      name: "Vaporizadores",
+      slug: "vaporizadores",
+      subcategories: [
+        { name: "Descartáveis", slug: "descartaveis" },
+        { name: "Recarregáveis", slug: "recarregaveis" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Líquidos",
+      slug: "liquidos",
+      subcategories: [
+        { name: "Nic Salt", slug: "nic-salt" },
+        { name: "Freebase", slug: "freebase" },
+      ],
+    },
+    {
+      id: 3,
+      name: "Reposição",
+      slug: "reposicao",
+      subcategories: [
+        { name: "Coils", slug: "coils" },
+        { name: "Baterias", slug: "baterias" },
+        { name: "Capas", slug: "capas" },
+        { name: "Carregadores", slug: "carregadores" },
+      ],
+    },
+    {
+      id: 4,
+      name: "Eletrônicos",
+      slug: "eletronicos",
+      subcategories: [],
+    },
+    {
+      id: 5,
+      name: "Informática",
+      slug: "informatica",
+      subcategories: [
+        { name: "SSD's", slug: "ssds" },
+        { name: "Periféricos", slug: "perifericos" },
+        { name: "Memória RAM", slug: "memoria-ram" },
+        { name: "Baterias", slug: "baterias-info" },
+        { name: "Cabos", slug: "cabos" },
+        { name: "HD's", slug: "hds" },
+        { name: "Fontes", slug: "fontes" },
+        { name: "Coolers", slug: "coolers" },
+        { name: "Gabinetes", slug: "gabinetes" },
+      ],
+    },
+  ]
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,8 +104,9 @@ export default function Header() {
             {/* Logo */}
             <Link
               href="/"
-              className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
+              className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent flex items-center"
             >
+              <img src="/vlar-icon.png" alt="Vlar" className="w-8 h-8 mr-2" />
               Vlar
             </Link>
 
@@ -76,7 +115,7 @@ export default function Header() {
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder="Pesquise o seu produto"
+                  placeholder="Pesquise vaporizadores, líquidos e mais..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-4 pr-12 py-3 bg-gray-800 text-white border-gray-600 rounded-lg focus:border-cyan-400"
@@ -138,7 +177,7 @@ export default function Header() {
                     </DropdownMenuItem>
                     {isAdmin && (
                       <DropdownMenuItem asChild className="text-gray-300">
-                        <Link href="/admin">
+                        <Link href="/admin-user-modify">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Administração</span>
                         </Link>
@@ -167,31 +206,61 @@ export default function Header() {
         <div className="bg-gray-800 border-t border-gray-700">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between">
-              <NavigationMenu className="max-w-full">
-                <NavigationMenuList className="flex space-x-0">
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-cyan-400 text-black hover:bg-cyan-500 px-6 py-3 rounded-none">
-                      <Menu className="h-4 w-4 mr-2" />
-                      DEPARTAMENTOS
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent className="bg-white p-4 w-80">
-                      <div className="grid gap-2">
-                        {categories.map((category) => (
-                          <Link
-                            key={category.id}
-                            href={`/categoria/${category.slug}`}
-                            className="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded"
-                          >
-                            {category.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
+              <div className="flex items-center space-x-8">
+                <NavigationMenu className="max-w-full">
+                  <NavigationMenuList className="flex space-x-0">
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger className="bg-cyan-400 text-black hover:bg-cyan-500 px-6 py-3 rounded-none">
+                        <Menu className="h-4 w-4 mr-2" />
+                        DEPARTAMENTOS
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent className="bg-white p-4 w-96">
+                        <div className="grid gap-2">
+                          {categories.map((category) => (
+                            <div key={category.id} className="group">
+                              <Link
+                                href={`/categoria/${category.slug}`}
+                                className="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded font-medium"
+                              >
+                                {category.name}
+                              </Link>
+                              {category.subcategories.length > 0 && (
+                                <div className="ml-4 mt-1 space-y-1">
+                                  {category.subcategories.map((sub) => (
+                                    <Link
+                                      key={sub.slug}
+                                      href={`/categoria/${category.slug}/${sub.slug}`}
+                                      className="block px-4 py-1 text-gray-600 hover:bg-gray-50 rounded text-sm"
+                                    >
+                                      • {sub.name}
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+              </div>
 
-              <div className="text-gray-300 text-sm">🚚 Frete grátis para compras acima de R$ 299</div>
+              <div className="flex items-center space-x-6">
+                <div className="text-gray-300 text-sm">🚚 Frete grátis para compras acima de R$ 299</div>
+
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="h-4 w-4 text-gray-400" />
+                  <div className="flex space-x-1">
+                    <img src="/payment-icons/visa.png" alt="Visa" className="h-6 w-auto" />
+                    <img src="/payment-icons/mastercard.png" alt="Mastercard" className="h-6 w-auto" />
+                    <img src="/payment-icons/amex.png" alt="American Express" className="h-6 w-auto" />
+                    <img src="/payment-icons/elo.png" alt="Elo" className="h-6 w-auto" />
+                    <img src="/payment-icons/pix.png" alt="PIX" className="h-6 w-auto" />
+                    <img src="/payment-icons/boleto.png" alt="Boleto" className="h-6 w-auto" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

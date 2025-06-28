@@ -8,9 +8,14 @@ import { CartProvider } from "@/hooks/use-cart"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TechStore - Produtos de Tecnologia",
-  description: "Os melhores produtos de tecnologia com os melhores preços",
-    generator: 'v0.dev'
+  title: "Vlar - Vaporizadores e Tecnologia",
+  description: "Os melhores vaporizadores, líquidos e produtos de tecnologia",
+  generator: "v0.dev",
+  icons: {
+    icon: "/vlar-icon.png",
+    shortcut: "/vlar-icon.png",
+    apple: "/vlar-icon.png",
+  },
 }
 
 export default function RootLayout({
