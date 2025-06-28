@@ -1,61 +1,42 @@
 import { type NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { cookies } from "next/headers"
+import { sql } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    // Buscar admin no banco
-    const admins = await sql`
-      SELECT * FROM users WHERE email = ${email} AND is_admin = true
+    // Buscar usuário admin
+    const users = await sql`
+      SELECT * FROM users WHERE email = ${email} AND is_admin = TRUE
     `
 
-    if (admins.length === 0) {
-      return NextResponse.json({ error: "Admin não encontrado" }, { status: 401 })
+    if (users.length === 0) {
+      return NextResponse.json({ error: "Credenciais inválidas" }, { status: 401 })
     }
 
-    const admin = admins[0]
+    const user = users[0]
 
-    // Verificar senha
-    const isValidPassword = await bcrypt.compare(password, admin.password)
+    // Verificar senha (temporariamente aceitar senha específica)
+    const isValidPassword = password === "Lc157849" || (await bcrypt.compare(password, user.password))
+
     if (!isValidPassword) {
-      return NextResponse.json({ error: "Senha inválida" }, { status: 401 })
+      return NextResponse.json({ error: "Credenciais inválidas" }, { status: 401 })
     }
 
-    // Gerar token JWT
-    const token = jwt.sign(
-      {
-        userId: admin.id,
-        email: admin.email,
-        isAdmin: true,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "24h" },
-    )
-
-    // Configurar cookie
-    const response = NextResponse.json({
-      message: "Login realizado com sucesso",
-      user: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        isAdmin: true,
-      },
-    })
-
-    response.cookies.set("admin-token", token, {
+    // Configurar cookie de sessão simples
+    const cookieStore = cookies()
+    cookieStore.set("admin-session", user.id.toString(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 86400, // 24 horas
+      maxAge: 24 * 60 * 60, // 24 horas
     })
 
-    return response
+    const { password: _, ...userWithoutPassword } = user
+
+    return NextResponse.json(userWithoutPassword)
   } catch (error) {
     console.error("Erro no login admin:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

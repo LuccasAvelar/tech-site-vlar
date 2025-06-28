@@ -5,23 +5,30 @@ import { motion } from "framer-motion"
 import ProductGrid from "@/components/product-grid"
 import Header from "@/components/header"
 import WhatsAppButton from "@/components/whatsapp-button"
-import type { Product } from "@/types"
+import BannerCarousel from "@/components/banner-carousel"
+import CategoryShowcase from "@/components/category-showcase"
+import type { Product, Banner } from "@/types"
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [banners, setBanners] = useState<Banner[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProducts()
+    fetchData()
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch("/api/products")
-      const data = await response.json()
-      setProducts(data)
+      const [productsRes, bannersRes] = await Promise.all([fetch("/api/products"), fetch("/api/banners")])
+
+      const productsData = await productsRes.json()
+      const bannersData = await bannersRes.json()
+
+      setProducts(productsData)
+      setBanners(bannersData)
     } catch (error) {
-      console.error("Erro ao carregar produtos:", error)
+      console.error("Erro ao carregar dados:", error)
     } finally {
       setLoading(false)
     }
@@ -31,26 +38,33 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-4">
-            TechStore
-          </h1>
-          <p className="text-gray-300 text-xl">Os melhores produtos de tecnologia para você</p>
-        </motion.div>
+      <main>
+        {/* Banner Principal */}
+        <BannerCarousel banners={banners} />
 
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-400"></div>
-          </div>
-        ) : (
-          <ProductGrid products={products} />
-        )}
+        {/* Showcase de Categorias */}
+        <CategoryShowcase />
+
+        {/* Produtos em Destaque */}
+        <section className="container mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">Produtos em Destaque</h2>
+            <p className="text-gray-300">Confira nossa seleção especial</p>
+          </motion.div>
+
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-400"></div>
+            </div>
+          ) : (
+            <ProductGrid products={products} />
+          )}
+        </section>
       </main>
 
       <WhatsAppButton />

@@ -1,42 +1,63 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { sql } from "@/lib/db"
 import nodemailer from "nodemailer"
 
 export async function POST(request: NextRequest) {
   try {
-    const { nome, sobrenome, email, whatsapp, problema } = await request.json()
+    const { name, surname, email, whatsapp, message } = await request.json()
 
-    // Configurar o transporter do nodemailer
+    // Salvar no banco
+    await sql`
+      INSERT INTO contact_messages (name, surname, email, whatsapp, message)
+      VALUES (${name}, ${surname}, ${email}, ${whatsapp || null}, ${message})
+    `
+
+    // Enviar email (se configurado)
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      await sendContactNotification({ name, surname, email, whatsapp, message })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Erro ao processar contato:", error)
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 })
+  }
+}
+
+async function sendContactNotification(data: any) {
+  try {
     const transporter = nodemailer.createTransporter({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     })
 
-    // Configurar o email
-    const mailOptions = {
+    const emailContent = `
+      📧 NOVA MENSAGEM DE CONTATO - VLAR
+      
+      👤 Nome: ${data.name} ${data.surname}
+      📧 Email: ${data.email}
+      📱 WhatsApp: ${data.whatsapp || "Não informado"}
+      
+      💬 Mensagem:
+      ${data.message}
+      
+      ⏰ Data: ${new Date().toLocaleString("pt-BR")}
+    `
+
+    await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: "luccasavelar@gmail.com", // Seu email
-      subject: `Novo contato de ${nome} ${sobrenome}`,
-      html: `
-        <h2>Nova mensagem de contato</h2>
-        <p><strong>Nome:</strong> ${nome} ${sobrenome}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>WhatsApp:</strong> ${whatsapp}</p>
-        <p><strong>Problema/Dúvida:</strong></p>
-        <p>${problema}</p>
-        <hr>
-        <p><em>Mensagem enviada através do site TechStore</em></p>
-      `,
-    }
+      to: "vlartech@gmail.com",
+      subject: "🔔 Nova Mensagem de Contato - Vlar",
+      text: emailContent,
+    })
 
-    // Enviar o email
-    await transporter.sendMail(mailOptions)
-
-    return NextResponse.json({ message: "Email enviado com sucesso!" })
+    console.log("✅ Email de contato enviado!")
   } catch (error) {
-    console.error("Erro ao enviar email:", error)
-    return NextResponse.json({ error: "Erro ao enviar email" }, { status: 500 })
+    console.error("❌ Erro ao enviar email de contato:", error)
   }
 }
