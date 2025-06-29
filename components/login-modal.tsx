@@ -15,7 +15,7 @@ interface LoginModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
+export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const { login, register } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -251,3 +251,5 @@ export default function LoginModal({ open, onOpenChange }: LoginModalProps) {
     </Dialog>
   )
 }
+
+export default LoginModal

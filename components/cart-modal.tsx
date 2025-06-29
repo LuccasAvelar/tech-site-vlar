@@ -11,7 +11,7 @@ interface CartModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-export default function CartModal({ open, onOpenChange }: CartModalProps) {
+export function CartModal({ open, onOpenChange }: CartModalProps) {
   const { items, updateQuantity, removeItem, total, clearCart } = useCart()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -129,3 +129,5 @@ export default function CartModal({ open, onOpenChange }: CartModalProps) {
     </Dialog>
   )
 }
+
+export default CartModal
