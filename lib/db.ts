@@ -18,10 +18,15 @@ export async function initDatabase() {
         birth_date DATE,
         avatar TEXT,
         is_admin BOOLEAN DEFAULT FALSE,
-        needs_password_change BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `
+
+    // Adicionar coluna needs_password_change se não existir
+    await sql`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS needs_password_change BOOLEAN DEFAULT FALSE
     `
 
     // Criar tabela de produtos
@@ -34,6 +39,7 @@ export async function initDatabase() {
         image TEXT,
         category VARCHAR(100),
         stock INTEGER DEFAULT 0,
+        sku VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -67,20 +73,6 @@ export async function initDatabase() {
       )
     `
 
-    // Criar tabela de cupons
-    await sql`
-      CREATE TABLE IF NOT EXISTS coupons (
-        id SERIAL PRIMARY KEY,
-        code VARCHAR(50) UNIQUE NOT NULL,
-        discount DECIMAL(5,2) NOT NULL,
-        type VARCHAR(20) DEFAULT 'percentage',
-        is_active BOOLEAN DEFAULT TRUE,
-        expires_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `
-
     // Inserir usuário admin padrão
     const adminExists = await sql`
       SELECT id FROM users WHERE email = 'luccasavelar@gmail.com'
@@ -104,61 +96,86 @@ export async function initDatabase() {
       `
     }
 
+    // Inserir segundo usuário admin
+    const admin2Exists = await sql`
+      SELECT id FROM users WHERE email = 'contato@vlar.com'
+    `
+
+    if (admin2Exists.length === 0) {
+      const bcrypt = await import("bcryptjs")
+      const hashedPassword = await bcrypt.hash("admin123#", 10)
+
+      await sql`
+        INSERT INTO users (name, email, password, phone, is_admin)
+        VALUES (
+          'Admin Vlar',
+          'contato@vlar.com',
+          ${hashedPassword},
+          '(33) 99834-3132',
+          TRUE
+        )
+      `
+    }
+
     // Inserir produtos de exemplo
     const productsExist = await sql`SELECT id FROM products LIMIT 1`
 
     if (productsExist.length === 0) {
       const sampleProducts = [
         {
-          name: "SSD NVMe 1TB Samsung 980 PRO",
-          description:
-            "SSD de alta performance com velocidades de leitura de até 7.000 MB/s. Ideal para gaming e aplicações profissionais.",
-          price: 599.99,
-          category: "storage",
+          name: "Vape Pod Descartável 2500 Puffs",
+          description: "Vaporizador descartável com 2500 puffs, sabor frutas vermelhas",
+          price: 29.9,
+          category: "vaporizadores",
+          stock: 45,
+          sku: "VP001",
+        },
+        {
+          name: "Líquido Nic Salt 30ml",
+          description: "Líquido para vape com nicotina salt, diversos sabores disponíveis",
+          price: 19.9,
+          category: "liquidos",
+          stock: 32,
+          sku: "LQ001",
+        },
+        {
+          name: "Coil Reposição 0.8ohm",
+          description: "Resistência de reposição para vaporizadores, 0.8ohm",
+          price: 12.9,
+          category: "reposicao",
+          stock: 78,
+          sku: "CR001",
+        },
+        {
+          name: "SSD 480GB SATA",
+          description: "SSD de alta velocidade para melhor performance do seu PC",
+          price: 189.9,
+          category: "informatica",
           stock: 15,
+          sku: "SSD001",
         },
         {
-          name: "Placa de Vídeo RTX 4070 Ti",
-          description: "Placa de vídeo de última geração com Ray Tracing e DLSS 3.0. Perfeita para jogos em 4K.",
-          price: 3299.99,
-          category: "gpu",
-          stock: 8,
+          name: "Memória RAM 8GB DDR4",
+          description: "Memória RAM DDR4 8GB para upgrade do seu computador",
+          price: 159.9,
+          category: "informatica",
+          stock: 23,
+          sku: "RAM001",
         },
         {
-          name: "Processador Intel Core i7-13700K",
-          description: "Processador de 13ª geração com 16 núcleos e 24 threads. Excelente para gaming e produtividade.",
-          price: 1899.99,
-          category: "cpu",
-          stock: 12,
-        },
-        {
-          name: "Memória RAM DDR5 32GB (2x16GB)",
-          description: "Kit de memória DDR5 de alta velocidade, 5600MHz. Ideal para sistemas de alta performance.",
-          price: 899.99,
-          category: "memory",
-          stock: 20,
-        },
-        {
-          name: 'Monitor Gamer 27" 144Hz',
-          description:
-            "Monitor curvo com taxa de atualização de 144Hz e tempo de resposta de 1ms. Perfeito para e-sports.",
-          price: 1299.99,
-          category: "monitor",
-          stock: 6,
-        },
-        {
-          name: "Teclado Mecânico RGB",
-          description: "Teclado mecânico com switches Cherry MX e iluminação RGB personalizável.",
-          price: 399.99,
-          category: "peripherals",
-          stock: 25,
+          name: "Carregador USB-C",
+          description: "Carregador rápido USB-C compatível com diversos dispositivos",
+          price: 24.9,
+          category: "eletronicos",
+          stock: 67,
+          sku: "CHG001",
         },
       ]
 
       for (const product of sampleProducts) {
         await sql`
-          INSERT INTO products (name, description, price, category, stock)
-          VALUES (${product.name}, ${product.description}, ${product.price}, ${product.category}, ${product.stock})
+          INSERT INTO products (name, description, price, category, stock, sku)
+          VALUES (${product.name}, ${product.description}, ${product.price}, ${product.category}, ${product.stock}, ${product.sku})
         `
       }
     }

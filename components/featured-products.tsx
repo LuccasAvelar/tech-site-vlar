@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react"
@@ -6,23 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/hooks/use-cart"
-import { formatPrice } from "@/lib/utils"
 
 interface Product {
   id: number
   name: string
+  description?: string
   price: number
-  image: string
+  image?: string
   category: string
   stock: number
+  sku?: string
 }
 
 interface FeaturedProductsProps {
   products: Product[]
-  isLoading: boolean
 }
 
-export default function FeaturedProducts({ products, isLoading }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const { addItem } = useCart()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [visibleProducts, setVisibleProducts] = useState(4)
@@ -69,29 +70,20 @@ export default function FeaturedProducts({ products, isLoading }: FeaturedProduc
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
+      image: product.image || "/placeholder.svg?height=200&width=200",
       quantity: 1,
     })
   }
 
-  if (isLoading) {
-    return (
-      <div className="relative">
-        <div className="flex space-x-4 overflow-hidden">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-72">
-              <Card className="bg-gray-800 border-gray-700 animate-pulse">
-                <CardContent className="p-4">
-                  <div className="bg-gray-700 h-48 rounded mb-4"></div>
-                  <div className="bg-gray-700 h-4 rounded mb-2"></div>
-                  <div className="bg-gray-700 h-6 rounded w-20"></div>
-                </CardContent>
-              </Card>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price)
+  }
+
+  if (!products || products.length === 0) {
+    return <div className="text-center text-gray-400 py-8">Nenhum produto em destaque encontrado.</div>
   }
 
   return (
@@ -115,7 +107,7 @@ export default function FeaturedProducts({ products, isLoading }: FeaturedProduc
                 <CardContent className="p-4">
                   <div className="relative mb-4">
                     <img
-                      src={product.image || "/placeholder.svg"}
+                      src={product.image || "/placeholder.svg?height=200&width=200"}
                       alt={product.name}
                       className="w-full h-48 object-cover rounded"
                     />
@@ -184,3 +176,5 @@ export default function FeaturedProducts({ products, isLoading }: FeaturedProduc
     </div>
   )
 }
+
+export { FeaturedProducts }

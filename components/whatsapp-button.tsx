@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 export default function WhatsAppButton() {
   const handleWhatsAppClick = () => {
     const phoneNumber = "5533998343132"
-    const message = "Olá! Gostaria de saber mais sobre os produtos da TechStore."
+    const message = "Olá! Gostaria de saber mais sobre os produtos da Vlar."
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
     window.open(url, "_blank")
   }
@@ -22,10 +22,13 @@ export default function WhatsAppButton() {
       <Button
         onClick={handleWhatsAppClick}
         size="lg"
-        className="rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14"
+        className="rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 p-0"
+        title="Falar no WhatsApp"
       >
         <MessageCircle className="h-6 w-6" />
       </Button>
     </motion.div>
   )
 }
+
+export { WhatsAppButton }

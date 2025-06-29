@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -9,7 +10,7 @@ const banners = [
     id: 1,
     title: "Bem-vindo à Vlar",
     subtitle: "Os melhores vaporizadores e produtos tech",
-    image: "/placeholder.svg",
+    image: "/placeholder.svg?height=500&width=1200",
     cta: "Ver Produtos",
     link: "#produtos",
   },
@@ -17,7 +18,7 @@ const banners = [
     id: 2,
     title: "Novos Vaporizadores",
     subtitle: "Descubra nossa linha premium",
-    image: "/placeholder.svg",
+    image: "/placeholder.svg?height=500&width=1200",
     cta: "Explorar",
     link: "/categoria/vaporizadores",
   },
@@ -25,7 +26,7 @@ const banners = [
     id: 3,
     title: "Frete Grátis",
     subtitle: "Em compras acima de R$ 299",
-    image: "/placeholder.svg",
+    image: "/placeholder.svg?height=500&width=1200",
     cta: "Aproveitar",
     link: "#",
   },
@@ -136,3 +137,5 @@ export default function BannerCarousel() {
     </div>
   )
 }
+
+export { BannerCarousel }
