@@ -32,10 +32,11 @@ export async function GET(request: NextRequest) {
         )
       ORDER BY 
         CASE 
-          WHEN LOWER(name) LIKE ${searchTerm} THEN 1
-          WHEN LOWER(sku) LIKE ${searchTerm} THEN 2
+          WHEN LOWER(name) LIKE ${`${query.toLowerCase()}%`} THEN 1
+          WHEN LOWER(name) LIKE ${searchTerm} THEN 2
           ELSE 3
-        END
+        END,
+        name
       LIMIT 10
     `
 

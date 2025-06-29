@@ -13,7 +13,8 @@ interface Product {
   name: string
   price: number
   image_url: string
-  category_name: string
+  category: string
+  stock: number
 }
 
 interface SearchBarProps {
@@ -50,9 +51,11 @@ export default function SearchBar({ onSearch, className }: SearchBarProps) {
       setLoading(true)
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        const data = await response.json()
-        setResults(data.products || [])
-        setIsOpen(true)
+        if (response.ok) {
+          const data = await response.json()
+          setResults(data.products || [])
+          setIsOpen(true)
+        }
       } catch (error) {
         console.error("Erro na busca:", error)
         setResults([])
@@ -88,7 +91,7 @@ export default function SearchBar({ onSearch, className }: SearchBarProps) {
           placeholder="Buscar produtos..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-4 pr-12 py-3 bg-gray-800 text-white border-gray-600 rounded-lg focus:border-cyan-400"
+          className="w-full pl-4 pr-12 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-400 focus:ring-0"
         />
         <Button type="submit" size="icon" className="absolute right-1 top-1 bg-cyan-400 hover:bg-cyan-500 text-black">
           <Search className="h-4 w-4" />
@@ -97,7 +100,7 @@ export default function SearchBar({ onSearch, className }: SearchBarProps) {
 
       {/* Dropdown de resultados */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-gray-500">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400 mx-auto"></div>
@@ -119,9 +122,14 @@ export default function SearchBar({ onSearch, className }: SearchBarProps) {
                   />
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">{product.name}</h4>
-                    <p className="text-xs text-gray-500">{product.category_name}</p>
+                    <p className="text-xs text-gray-500 capitalize">{product.category}</p>
                   </div>
-                  <div className="text-sm font-semibold text-cyan-600">{formatPrice(product.price)}</div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-cyan-600">{formatPrice(product.price)}</div>
+                    <div className="text-xs text-gray-500">
+                      {product.stock > 0 ? `${product.stock} em estoque` : "Sem estoque"}
+                    </div>
+                  </div>
                 </Link>
               ))}
               <div className="border-t border-gray-200 p-3">
@@ -144,5 +152,3 @@ export default function SearchBar({ onSearch, className }: SearchBarProps) {
     </div>
   )
 }
-
-export { SearchBar }
