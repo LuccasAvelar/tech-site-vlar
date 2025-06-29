@@ -1,6 +1,9 @@
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+// Usar a string de conexão fornecida
+const sql = neon(
+  "postgresql://neondb_owner:npg_QCpNcy4ukKt2@ep-delicate-cherry-a5rf651f-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+)
 
 export { sql }
 
@@ -18,15 +21,10 @@ export async function initDatabase() {
         birth_date DATE,
         avatar TEXT,
         is_admin BOOLEAN DEFAULT FALSE,
+        needs_password_change BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `
-
-    // Adicionar coluna needs_password_change se não existir
-    await sql`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS needs_password_change BOOLEAN DEFAULT FALSE
     `
 
     // Criar tabela de produtos

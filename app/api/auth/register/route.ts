@@ -3,20 +3,17 @@ import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { sql } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password, phone, birthDate } = await request.json()
 
-    // Validações básicas
     if (!name || !email || !password) {
-      return NextResponse.json({ error: "Todos os campos obrigatórios devem ser preenchidos" }, { status: 400 })
+      return NextResponse.json({ error: "Nome, email e senha são obrigatórios" }, { status: 400 })
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "A senha deve ter pelo menos 6 caracteres" }, { status: 400 })
-    }
-
-    // Verificar se email já existe
+    // Verificar se o email já existe
     const existingUsers = await sql`
       SELECT id FROM users WHERE email = ${email}
     `
@@ -26,22 +23,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Criar novo usuário
-    const result = await sql`
+    // Inserir novo usuário
+    const newUsers = await sql`
       INSERT INTO users (name, email, password, phone, birth_date, is_admin)
       VALUES (${name}, ${email}, ${hashedPassword}, ${phone || null}, ${birthDate || null}, FALSE)
-      RETURNING id, name, email, phone, birth_date, is_admin, created_at
+      RETURNING id, name, email, phone, birth_date, is_admin
     `
 
-    const newUser = result[0]
+    const newUser = newUsers[0]
 
-    // Criar sessão simples com cookie
+    // Criar sessão automaticamente
     const sessionData = {
       userId: newUser.id,
-      email: newUser.email,
       name: newUser.name,
+      email: newUser.email,
       isAdmin: newUser.is_admin,
       loginTime: Date.now(),
     }
@@ -50,29 +47,21 @@ export async function POST(request: NextRequest) {
     cookieStore.set("vlar-session", JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60, // 7 dias
-      path: "/",
     })
 
-    return NextResponse.json(
-      {
+    return NextResponse.json({
+      user: {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
-        phone: newUser.phone,
-        birthDate: newUser.birth_date,
         isAdmin: newUser.is_admin,
+        phone: newUser.phone,
       },
-      { status: 201 },
-    )
+    })
   } catch (error) {
-    console.error("Erro no registro:", error)
-    return NextResponse.json(
-      {
-        error: "Erro interno do servidor. Tente novamente.",
-      },
-      { status: 500 },
-    )
+    console.error("Erro no cadastro:", error)
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { sql } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
@@ -20,11 +21,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Sessão expirada" }, { status: 401 })
     }
 
+    // Buscar dados atualizados do usuário no banco
+    const users = await sql`
+      SELECT id, name, email, phone, birth_date, is_admin, created_at
+      FROM users 
+      WHERE id = ${sessionData.userId}
+    `
+
+    if (users.length === 0) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 401 })
+    }
+
+    const user = users[0]
+
     return NextResponse.json({
-      id: sessionData.userId,
-      name: sessionData.name,
-      email: sessionData.email,
-      isAdmin: sessionData.isAdmin,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      birthDate: user.birth_date,
+      isAdmin: user.is_admin,
     })
   } catch (error) {
     console.error("Erro ao verificar sessão:", error)
