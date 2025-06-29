@@ -1,18 +1,16 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
-import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut, Package, CreditCard } from "lucide-react"
+import { ShoppingCart, User, Menu, X, ChevronDown, LogOut, Package, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useCart } from "@/hooks/use-cart"
 import { useAuth } from "@/hooks/use-auth"
 import LoginModal from "./login-modal"
 import CartModal from "./cart-modal"
+import SearchBar from "./search-bar"
 
 export default function Header() {
   const { items } = useCart()
@@ -20,7 +18,6 @@ export default function Header() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showCartModal, setShowCartModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -73,16 +70,14 @@ export default function Header() {
     },
   ]
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/busca?q=${encodeURIComponent(searchQuery)}`
-    }
-  }
-
   return (
     <>
       <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+        {/* Frete Info Bar */}
+        <div className="bg-cyan-400 text-black text-center py-1 text-sm">
+          🚚 Frete grátis para compras acima de R$ 299
+        </div>
+
         {/* Main Header */}
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -96,37 +91,14 @@ export default function Header() {
             </Link>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-8 hidden md:block">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Buscar produtos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 bg-gray-800 text-white border-gray-600 rounded-lg focus:border-cyan-400"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="absolute right-1 top-1 bg-cyan-400 hover:bg-cyan-500 text-black"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
+            <SearchBar className="flex-1 max-w-2xl mx-8 hidden md:block" />
 
             {/* User Actions */}
             <div className="flex items-center space-x-4">
-              {/* Frete Info */}
-              <div className="hidden lg:block text-cyan-400 text-sm">🚚 Frete grátis acima de R$ 299</div>
-
-              {/* Payment Icons */}
-              <div className="hidden lg:flex items-center space-x-1">
-                <CreditCard className="h-4 w-4 text-gray-400" />
-                <img src="/payment-icons/visa.png" alt="Visa" className="h-5 w-auto" />
-                <img src="/payment-icons/mastercard.png" alt="Mastercard" className="h-5 w-auto" />
-                <img src="/payment-icons/pix.png" alt="PIX" className="h-5 w-auto" />
-              </div>
+              {/* Contact Link */}
+              <Link href="/contato" className="text-gray-300 hover:text-cyan-400 transition-colors hidden md:block">
+                Contato
+              </Link>
 
               {/* Cart */}
               <Button
@@ -160,19 +132,21 @@ export default function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-gray-900 border-gray-700" align="end">
                     <DropdownMenuItem asChild className="text-gray-300">
+                      <Link href="/perfil">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Meu Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="text-gray-300">
                       <Link href="/meus-pedidos">
                         <Package className="mr-2 h-4 w-4" />
                         <span>Meus Pedidos</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-gray-300">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Meu Perfil</span>
-                    </DropdownMenuItem>
                     {isAdmin && (
                       <DropdownMenuItem asChild className="text-gray-300">
                         <Link href="/admin-user-modify">
-                          <Package className="mr-2 h-4 w-4" />
+                          <Settings className="mr-2 h-4 w-4" />
                           <span>Administração</span>
                         </Link>
                       </DropdownMenuItem>
@@ -205,24 +179,7 @@ export default function Header() {
           </div>
 
           {/* Mobile Search */}
-          <form onSubmit={handleSearch} className="md:hidden mt-4">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Buscar produtos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-12 py-2 bg-gray-800 text-white border-gray-600 rounded-lg focus:border-cyan-400"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-1 top-1 bg-cyan-400 hover:bg-cyan-500 text-black"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
+          <SearchBar className="md:hidden mt-4" />
         </div>
 
         {/* Departments Navigation */}
@@ -275,8 +232,14 @@ export default function Header() {
           <div className="md:hidden bg-gray-900 border-t border-gray-800">
             <div className="container mx-auto px-4 py-4">
               <div className="space-y-4">
-                {/* Mobile Frete Info */}
-                <div className="text-cyan-400 text-sm">🚚 Frete grátis acima de R$ 299</div>
+                {/* Mobile Contact */}
+                <Link
+                  href="/contato"
+                  className="block text-cyan-400 hover:text-cyan-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Contato
+                </Link>
 
                 {/* Mobile Departments */}
                 <div className="space-y-2">
@@ -319,5 +282,4 @@ export default function Header() {
   )
 }
 
-// Export both named and default
 export { Header }

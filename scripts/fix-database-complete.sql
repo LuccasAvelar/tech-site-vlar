@@ -1,157 +1,157 @@
--- Limpar e recriar todas as tabelas
+-- Criar banco completo com todas as tabelas necessárias
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS coupons CASCADE;
-DROP TABLE IF EXISTS banners CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS banners CASCADE;
+DROP TABLE IF EXISTS site_content CASCADE;
 
--- Criar tabela de usuários
+-- Tabela de usuários
 CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  phone VARCHAR(20),
-  birth_date DATE,
-  avatar TEXT,
-  is_admin BOOLEAN DEFAULT FALSE,
-  needs_password_change BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    birth_date DATE,
+    is_admin BOOLEAN DEFAULT FALSE,
+    avatar VARCHAR(500),
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(50),
+    zip_code VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criar tabela de categorias
+-- Tabela de categorias
 CREATE TABLE categories (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) UNIQUE NOT NULL,
-  parent_id INTEGER REFERENCES categories(id),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT,
+    parent_id INTEGER REFERENCES categories(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criar tabela de produtos
+-- Tabela de produtos
 CREATE TABLE products (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  description TEXT,
-  price DECIMAL(10,2) NOT NULL,
-  image TEXT,
-  category VARCHAR(100),
-  stock INTEGER DEFAULT 0,
-  sku VARCHAR(100) UNIQUE,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock INTEGER DEFAULT 0,
+    category_id INTEGER REFERENCES categories(id),
+    image_url VARCHAR(500),
+    images TEXT[], -- Array de URLs de imagens
+    featured BOOLEAN DEFAULT FALSE,
+    active BOOLEAN DEFAULT TRUE,
+    sku VARCHAR(100) UNIQUE,
+    weight DECIMAL(8,2),
+    dimensions VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criar tabela de pedidos
+-- Tabela de pedidos
 CREATE TABLE orders (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  total DECIMAL(10,2) NOT NULL,
-  payment_method VARCHAR(50),
-  installments INTEGER DEFAULT 1,
-  address TEXT,
-  coupon_code VARCHAR(50),
-  status VARCHAR(20) DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    total DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_method VARCHAR(100),
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    shipping_address TEXT,
+    tracking_code VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criar tabela de itens do pedido
+-- Tabela de itens do pedido
 CREATE TABLE order_items (
-  id SERIAL PRIMARY KEY,
-  order_id INTEGER REFERENCES orders(id),
-  product_id INTEGER REFERENCES products(id),
-  quantity INTEGER NOT NULL,
-  price DECIMAL(10,2) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id),
+    quantity INTEGER NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criar tabela de cupons
-CREATE TABLE coupons (
-  id SERIAL PRIMARY KEY,
-  code VARCHAR(50) UNIQUE NOT NULL,
-  discount DECIMAL(5,2) NOT NULL,
-  type VARCHAR(20) DEFAULT 'percentage',
-  is_active BOOLEAN DEFAULT TRUE,
-  expires_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Criar tabela de banners
+-- Tabela de banners
 CREATE TABLE banners (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  image_url TEXT NOT NULL,
-  link_url TEXT,
-  is_active BOOLEAN DEFAULT TRUE,
-  order_position INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255),
+    image_url VARCHAR(500) NOT NULL,
+    link_url VARCHAR(500),
+    active BOOLEAN DEFAULT TRUE,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Inserir usuário admin
-INSERT INTO users (name, email, password, phone, birth_date, is_admin, needs_password_change)
-VALUES (
-  'Administrador Vlar',
-  'contato@vlar.com',
-  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/hL.hl.vHm', -- admin123#
-  '(11) 99999-9999',
-  '1990-01-01',
-  TRUE,
-  FALSE
+-- Tabela de conteúdo do site
+CREATE TABLE site_content (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(100) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Inserir categorias
-INSERT INTO categories (name, slug, parent_id) VALUES
-('Vaporizadores', 'vaporizadores', NULL),
-('Líquidos', 'liquidos', NULL),
-('Reposição', 'reposicao', NULL),
-('Eletrônicos', 'eletronicos', NULL),
-('Informática', 'informatica', NULL);
+INSERT INTO categories (name, slug, description) VALUES
+('Vaporizadores', 'vaporizadores', 'Vaporizadores e dispositivos eletrônicos'),
+('Líquidos', 'liquidos', 'Líquidos para vaporização'),
+('Reposição', 'reposicao', 'Peças de reposição e acessórios'),
+('Eletrônicos', 'eletronicos', 'Produtos eletrônicos diversos'),
+('Informática', 'informatica', 'Produtos de informática e tecnologia');
 
 -- Inserir subcategorias
-INSERT INTO categories (name, slug, parent_id) VALUES
-('Descartáveis', 'descartaveis', 1),
-('Recarregáveis', 'recarregaveis', 1),
-('Nic Salt', 'nic-salt', 2),
-('Freebase', 'freebase', 2),
-('Coils', 'coils', 3),
-('Baterias', 'baterias', 3),
-('Capas', 'capas', 3),
-('Carregadores', 'carregadores', 3),
-('SSDs', 'ssds', 5),
-('Periféricos', 'perifericos', 5),
-('Memória RAM', 'memoria-ram', 5),
-('Baterias Info', 'baterias-info', 5),
-('Cabos', 'cabos', 5),
-('HDs', 'hds', 5),
-('Fontes', 'fontes', 5),
-('Coolers', 'coolers', 5),
-('Gabinetes', 'gabinetes', 5);
+INSERT INTO categories (name, slug, description, parent_id) VALUES
+('Descartáveis', 'descartaveis', 'Vaporizadores descartáveis', 1),
+('Recarregáveis', 'recarregaveis', 'Vaporizadores recarregáveis', 1),
+('Nic Salt', 'nic-salt', 'Líquidos com nicotina salt', 2),
+('Freebase', 'freebase', 'Líquidos freebase', 2),
+('Coils', 'coils', 'Resistências e coils', 3),
+('Baterias', 'baterias', 'Baterias para vaporizadores', 3),
+('SSD''s', 'ssds', 'Discos SSD', 5),
+('Periféricos', 'perifericos', 'Periféricos de computador', 5);
 
 -- Inserir produtos de exemplo
-INSERT INTO products (name, description, price, category, stock, sku) VALUES
-('Vape Pod Descartável 2000 Puffs', 'Vaporizador descartável com 2000 puffs, sabor menta gelada', 29.90, 'vaporizadores', 50, 'VAPE001'),
-('Líquido Nic Salt 30ml - Morango', 'Líquido para vape com nicotina salt, sabor morango', 39.90, 'liquidos', 30, 'LIQ001'),
-('Coil 0.8ohm Mesh', 'Resistência mesh 0.8ohm para vaporizadores', 15.90, 'reposicao', 100, 'COIL001'),
-('SSD NVMe 1TB Samsung', 'SSD de alta performance para computadores', 299.90, 'informatica', 15, 'SSD001'),
-('Teclado Mecânico RGB', 'Teclado mecânico com iluminação RGB', 199.90, 'informatica', 25, 'TEC001'),
-('Vape Recarregável Kit Completo', 'Kit completo com vaporizador recarregável e acessórios', 89.90, 'vaporizadores', 20, 'VAPE002'),
-('Líquido Freebase 60ml - Tabaco', 'Líquido tradicional sabor tabaco', 24.90, 'liquidos', 40, 'LIQ002'),
-('Bateria 18650 3000mAh', 'Bateria recarregável para vaporizadores', 35.90, 'reposicao', 60, 'BAT001');
+INSERT INTO products (name, description, price, stock, category_id, image_url, featured, sku) VALUES
+('Vape Pod Descartável 2500 Puffs', 'Vaporizador descartável com 2500 puffs, sabor menta', 29.90, 50, 6, '/placeholder.svg?height=300&width=300', true, 'VPD2500-MENTA'),
+('Líquido Nic Salt 30ml', 'Líquido premium com nicotina salt, diversos sabores', 24.90, 100, 8, '/placeholder.svg?height=300&width=300', true, 'LNS30-FRUTAS'),
+('Kit Vape Recarregável', 'Kit completo com vaporizador recarregável e acessórios', 89.90, 25, 7, '/placeholder.svg?height=300&width=300', true, 'KVR-COMPLETO'),
+('Coil 0.6ohm Pack 5un', 'Pack com 5 resistências 0.6ohm compatíveis', 19.90, 75, 10, '/placeholder.svg?height=300&width=300', false, 'COIL-06-5UN'),
+('SSD 480GB SATA', 'SSD SATA 480GB para upgrade de performance', 159.90, 30, 12, '/placeholder.svg?height=300&width=300', true, 'SSD480-SATA'),
+('Mouse Gamer RGB', 'Mouse gamer com iluminação RGB e alta precisão', 79.90, 40, 13, '/placeholder.svg?height=300&width=300', false, 'MOUSE-RGB-GAMER');
 
--- Inserir banners de exemplo
-INSERT INTO banners (title, image_url, link_url, is_active, order_position) VALUES
-('Banner Principal - Vapes', '/placeholder.svg?height=400&width=1200', '/categoria/vaporizadores', TRUE, 1),
-('Promoção Líquidos', '/placeholder.svg?height=400&width=1200', '/categoria/liquidos', TRUE, 2),
-('Lançamentos Tech', '/placeholder.svg?height=400&width=1200', '/categoria/informatica', TRUE, 3);
+-- Inserir banners
+INSERT INTO banners (title, image_url, link_url, active, order_index) VALUES
+('Bem-vindo à Vlar', '/placeholder.svg?height=400&width=1200', '/', true, 1),
+('Promoção Vaporizadores', '/placeholder.svg?height=400&width=1200', '/categoria/vaporizadores', true, 2),
+('Novos Líquidos', '/placeholder.svg?height=400&width=1200', '/categoria/liquidos', true, 3);
 
--- Inserir cupons de exemplo
-INSERT INTO coupons (code, discount, type, is_active) VALUES
-('VLAR10', 10.00, 'percentage', TRUE),
-('BEMVINDO', 15.00, 'percentage', TRUE),
-('FRETE50', 50.00, 'fixed', TRUE);
+-- Inserir conteúdo do site
+INSERT INTO site_content (key, value, description) VALUES
+('site_name', 'Vlar', 'Nome do site'),
+('site_description', 'Os melhores vaporizadores e produtos tech', 'Descrição do site'),
+('whatsapp_number', '5533998343132', 'Número do WhatsApp'),
+('free_shipping_min', '299', 'Valor mínimo para frete grátis'),
+('company_cnpj', '61.249.131/0001-00', 'CNPJ da empresa'),
+('company_name', 'Vlar Tecnologia Ltda', 'Nome da empresa');
+
+-- Criar usuários admin
+INSERT INTO users (name, email, password, is_admin) VALUES
+('Admin Vlar', 'admin@vlar.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', true),
+('Contato Vlar', 'contato@vlar.com', '$2a$10$EixZxYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', true);
+
+-- Criar índices para performance
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_featured ON products(featured);
+CREATE INDEX idx_products_active ON products(active);
+CREATE INDEX idx_orders_user ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_products_name ON products(name);

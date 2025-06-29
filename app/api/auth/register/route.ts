@@ -13,9 +13,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nome, email e senha são obrigatórios" }, { status: 400 })
     }
 
+    if (password.length < 6) {
+      return NextResponse.json({ error: "A senha deve ter pelo menos 6 caracteres" }, { status: 400 })
+    }
+
+    const emailLower = email.toLowerCase().trim()
+
     // Verificar se o email já existe
     const existingUsers = await sql`
-      SELECT id FROM users WHERE email = ${email}
+      SELECT id FROM users WHERE email = ${emailLower}
     `
 
     if (existingUsers.length > 0) {
@@ -23,12 +29,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Inserir novo usuário
     const newUsers = await sql`
       INSERT INTO users (name, email, password, phone, birth_date, is_admin)
-      VALUES (${name}, ${email}, ${hashedPassword}, ${phone || null}, ${birthDate || null}, FALSE)
+      VALUES (${name}, ${emailLower}, ${hashedPassword}, ${phone || null}, ${birthDate || null}, FALSE)
       RETURNING id, name, email, phone, birth_date, is_admin
     `
 
@@ -49,6 +55,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60, // 7 dias
+      path: "/",
     })
 
     return NextResponse.json({
