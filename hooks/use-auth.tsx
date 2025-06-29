@@ -1,15 +1,32 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { User } from "@/types"
+
+interface User {
+  id: number
+  name: string
+  email: string
+  phone?: string
+  birthDate?: string
+  isAdmin: boolean
+  avatar?: string
+}
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
-  register: (userData: any) => Promise<void>
-  logout: () => Promise<void>
-  isAdmin: boolean
   loading: boolean
+  isAdmin: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
+  logout: () => Promise<void>
+}
+
+interface RegisterData {
+  name: string
+  email: string
+  password: string
+  phone?: string
+  birthDate?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -24,9 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me", {
-        credentials: "include",
-      })
+      const response = await fetch("/api/auth/me")
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
@@ -41,63 +56,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await fetch("/api/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ email, password }),
-      credentials: "include",
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Erro ao fazer login")
+      const error = await response.json()
+      throw new Error(error.error || "Erro ao fazer login")
     }
 
     const userData = await response.json()
     setUser(userData)
   }
 
-  const register = async (userData: any) => {
+  const register = async (data: RegisterData) => {
     const response = await fetch("/api/auth/register", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Erro ao criar conta")
+      const error = await response.json()
+      throw new Error(error.error || "Erro ao criar conta")
     }
 
-    const newUser = await response.json()
-    setUser(newUser)
+    const userData = await response.json()
+    setUser(userData)
   }
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      })
+      await fetch("/api/auth/logout", { method: "POST" })
     } catch (error) {
-      console.error("Erro no logout:", error)
+      console.error("Erro ao fazer logout:", error)
     } finally {
       setUser(null)
     }
   }
 
+  const isAdmin = user?.isAdmin || false
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        register,
-        logout,
-        isAdmin: user?.isAdmin || false,
-        loading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, isAdmin, login, register, logout }}>{children}</AuthContext.Provider>
   )
 }
 
