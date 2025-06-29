@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
-import { initDatabase } from "@/lib/db"
+import { initializeDatabase } from "@/lib/db"
+
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const success = await initDatabase()
+    const success = await initializeDatabase()
 
     if (success) {
       return NextResponse.json({

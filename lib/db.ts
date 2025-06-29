@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs"
 
 const sql = neon(
   process.env.DATABASE_URL ||
-    "postgresql://neondb_owner:npg_QCpNcy4ukKt2@ep-delicate-cherry-a5rf651f-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    "postgresql://neondb_owner:npg_QCpNcy4ukKt2@ep-long-boat-a5druwxs-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
 )
 
 export { sql }
@@ -30,6 +30,10 @@ export async function initializeDatabase() {
           phone VARCHAR(20),
           birth_date DATE,
           avatar TEXT,
+          address TEXT,
+          city VARCHAR(100),
+          state VARCHAR(2),
+          zip_code VARCHAR(10),
           is_admin BOOLEAN DEFAULT FALSE,
           needs_password_change BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -44,12 +48,25 @@ export async function initializeDatabase() {
           name VARCHAR(255) NOT NULL,
           description TEXT,
           price DECIMAL(10,2) NOT NULL,
-          image TEXT,
+          image_url TEXT,
           category VARCHAR(100),
           stock INTEGER DEFAULT 0,
           sku VARCHAR(100),
+          active BOOLEAN DEFAULT TRUE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `
+
+      // Criar tabela de categorias
+      await sql`
+        CREATE TABLE IF NOT EXISTS categories (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) UNIQUE NOT NULL,
+          description TEXT,
+          active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `
 
@@ -81,13 +98,30 @@ export async function initializeDatabase() {
         )
       `
 
+      // Inserir categorias padrão
+      const categories = [
+        { name: "Vaporizadores", slug: "vaporizadores" },
+        { name: "Líquidos", slug: "liquidos" },
+        { name: "Reposição", slug: "reposicao" },
+        { name: "Eletrônicos", slug: "eletronicos" },
+        { name: "Informática", slug: "informatica" },
+      ]
+
+      for (const category of categories) {
+        await sql`
+          INSERT INTO categories (name, slug)
+          VALUES (${category.name}, ${category.slug})
+          ON CONFLICT (slug) DO NOTHING
+        `
+      }
+
       // Inserir usuário admin padrão
       const adminExists = await sql`
         SELECT id FROM users WHERE email = 'luccasavelar@gmail.com'
       `
 
       if (adminExists.length === 0) {
-        const hashedPassword = await bcrypt.hash("luccasavelar@gmail.com", 10)
+        const hashedPassword = await bcrypt.hash("luccasavelar@gmail.com", 12)
 
         await sql`
           INSERT INTO users (name, email, password, phone, birth_date, is_admin, needs_password_change)
@@ -109,7 +143,7 @@ export async function initializeDatabase() {
       `
 
       if (admin2Exists.length === 0) {
-        const hashedPassword = await bcrypt.hash("admin123#", 10)
+        const hashedPassword = await bcrypt.hash("admin123#", 12)
 
         await sql`
           INSERT INTO users (name, email, password, phone, is_admin)
@@ -129,59 +163,83 @@ export async function initializeDatabase() {
       if (productsExist.length === 0) {
         const sampleProducts = [
           {
-            name: "Vape Pod Descartável 2500 Puffs",
-            description: "Vaporizador descartável com 2500 puffs, sabor frutas vermelhas",
+            name: "Vape Pod Descartável 2500 Puffs - Frutas Vermelhas",
+            description: "Vaporizador descartável com 2500 puffs, sabor frutas vermelhas. Prático e saboroso.",
             price: 29.9,
             category: "vaporizadores",
             stock: 45,
             sku: "VP001",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
           {
-            name: "Líquido Nic Salt 30ml",
-            description: "Líquido para vape com nicotina salt, diversos sabores disponíveis",
+            name: "Líquido Nic Salt 30ml - Menta Gelada",
+            description: "Líquido para vape com nicotina salt, sabor menta gelada refrescante.",
             price: 19.9,
             category: "liquidos",
             stock: 32,
             sku: "LQ001",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
           {
-            name: "Coil Reposição 0.8ohm",
-            description: "Resistência de reposição para vaporizadores, 0.8ohm",
+            name: "Coil Reposição 0.8ohm - Pack 5 unidades",
+            description: "Resistência de reposição para vaporizadores, 0.8ohm. Pack com 5 unidades.",
             price: 12.9,
             category: "reposicao",
             stock: 78,
             sku: "CR001",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
           {
-            name: "SSD 480GB SATA",
-            description: "SSD de alta velocidade para melhor performance do seu PC",
+            name: "SSD 480GB SATA Kingston",
+            description: "SSD de alta velocidade Kingston 480GB SATA para melhor performance do seu PC.",
             price: 189.9,
             category: "informatica",
             stock: 15,
             sku: "SSD001",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
           {
-            name: "Memória RAM 8GB DDR4",
-            description: "Memória RAM DDR4 8GB para upgrade do seu computador",
+            name: "Memória RAM 8GB DDR4 2666MHz",
+            description: "Memória RAM DDR4 8GB 2666MHz para upgrade do seu computador.",
             price: 159.9,
             category: "informatica",
             stock: 23,
             sku: "RAM001",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
           {
-            name: "Carregador USB-C",
-            description: "Carregador rápido USB-C compatível com diversos dispositivos",
+            name: "Carregador USB-C 20W Fast Charge",
+            description: "Carregador rápido USB-C 20W compatível com diversos dispositivos.",
             price: 24.9,
             category: "eletronicos",
             stock: 67,
             sku: "CHG001",
+            image_url: "/placeholder.svg?height=300&width=300",
+          },
+          {
+            name: "Vape Pod Recarregável - Kit Completo",
+            description: "Kit completo de vape pod recarregável com carregador e manual.",
+            price: 89.9,
+            category: "vaporizadores",
+            stock: 28,
+            sku: "VP002",
+            image_url: "/placeholder.svg?height=300&width=300",
+          },
+          {
+            name: "Líquido Freebase 60ml - Tabaco Premium",
+            description: "Líquido freebase 60ml sabor tabaco premium para vaporizadores.",
+            price: 35.9,
+            category: "liquidos",
+            stock: 41,
+            sku: "LQ002",
+            image_url: "/placeholder.svg?height=300&width=300",
           },
         ]
 
         for (const product of sampleProducts) {
           await sql`
-            INSERT INTO products (name, description, price, category, stock, sku)
-            VALUES (${product.name}, ${product.description}, ${product.price}, ${product.category}, ${product.stock}, ${product.sku})
+            INSERT INTO products (name, description, price, category, stock, sku, image_url)
+            VALUES (${product.name}, ${product.description}, ${product.price}, ${product.category}, ${product.stock}, ${product.sku}, ${product.image_url})
           `
         }
       }
