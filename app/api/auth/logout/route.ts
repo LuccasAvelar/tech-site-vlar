@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 
 export async function POST() {
-  try {
-    const cookieStore = cookies()
-    cookieStore.delete("vlar-session")
+  const response = NextResponse.json({ message: "Logout realizado com sucesso" })
 
-    return NextResponse.json({ message: "Logout realizado com sucesso" })
-  } catch (error) {
-    console.error("Erro no logout:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
-  }
+  // Remover cookie de sessão
+  response.cookies.set("session", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 0,
+  })
+
+  return response
 }

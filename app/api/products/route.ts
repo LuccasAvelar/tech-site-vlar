@@ -1,56 +1,76 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 
-export const dynamic = "force-dynamic"
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = searchParams.get("limit") || "50"
+    const limit = searchParams.get("limit")
     const category = searchParams.get("category")
+    const featured = searchParams.get("featured")
 
     let query = sql`
-      SELECT id, name, description, price, image, category, stock, sku, created_at
-      FROM products
+      SELECT 
+        id, 
+        name, 
+        description, 
+        price, 
+        image_url, 
+        category, 
+        stock, 
+        sku, 
+        featured,
+        active
+      FROM products 
+      WHERE active = true
     `
 
     if (category) {
       query = sql`
-        SELECT id, name, description, price, image, category, stock, sku, created_at
-        FROM products
-        WHERE category = ${category}
+        SELECT 
+          id, 
+          name, 
+          description, 
+          price, 
+          image_url, 
+          category, 
+          stock, 
+          sku, 
+          featured,
+          active
+        FROM products 
+        WHERE active = true AND category = ${category}
       `
+    }
+
+    if (featured === "true") {
+      query = sql`
+        SELECT 
+          id, 
+          name, 
+          description, 
+          price, 
+          image_url, 
+          category, 
+          stock, 
+          sku, 
+          featured,
+          active
+        FROM products 
+        WHERE active = true AND featured = true
+      `
+    }
+
+    if (limit) {
+      const products = await query
+      const limitedProducts = products.slice(0, Number.parseInt(limit))
+      return NextResponse.json({ products: limitedProducts })
     }
 
     const products = await query
 
-    // Limitar resultados
-    const limitedProducts = products.slice(0, Number.parseInt(limit))
-
-    return NextResponse.json(limitedProducts)
+    return NextResponse.json({ products })
   } catch (error) {
     console.error("Erro ao buscar produtos:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { name, description, price, image, category, stock, sku } = await request.json()
-
-    if (!name || !price || !category) {
-      return NextResponse.json({ error: "Nome, preço e categoria são obrigatórios" }, { status: 400 })
-    }
-
-    const newProducts = await sql`
-      INSERT INTO products (name, description, price, image, category, stock, sku)
-      VALUES (${name}, ${description || null}, ${price}, ${image || null}, ${category}, ${stock || 0}, ${sku || null})
-      RETURNING id, name, description, price, image, category, stock, sku, created_at
-    `
-
-    return NextResponse.json(newProducts[0])
-  } catch (error) {
-    console.error("Erro ao criar produto:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
   }
 }

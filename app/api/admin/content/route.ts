@@ -1,34 +1,32 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { sql } from "@/lib/db"
 
 // Conteúdo padrão do site
 const defaultContent = [
   {
     key: "site_title",
-    value: "TechStore",
+    value: "Vlar",
     type: "text",
     label: "Título do Site",
     description: "Nome principal do site",
   },
   {
     key: "site_subtitle",
-    value: "Os melhores produtos de tecnologia para você",
+    value: "Vaporizadores e Tecnologia",
     type: "text",
     label: "Subtítulo do Site",
     description: "Descrição principal do site",
   },
   {
     key: "hero_title",
-    value: "Tecnologia de Ponta",
+    value: "Os Melhores Produtos de Tecnologia",
     type: "text",
     label: "Título da Seção Hero",
     description: "Título principal da página inicial",
   },
   {
     key: "hero_description",
-    value: "Descubra os melhores produtos de tecnologia com preços incríveis e qualidade garantida.",
+    value: "Descubra vaporizadores, líquidos e produtos de tecnologia com qualidade garantida e preços incríveis.",
     type: "textarea",
     label: "Descrição da Seção Hero",
     description: "Texto descritivo da página inicial",

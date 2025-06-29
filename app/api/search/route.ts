@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 
-export const dynamic = "force-dynamic"
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -16,34 +14,34 @@ export async function GET(request: NextRequest) {
 
     const products = await sql`
       SELECT 
-        p.id,
-        p.name,
-        p.description,
-        p.price,
-        p.stock,
-        p.image_url,
-        p.sku,
-        c.name as category_name
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE 
-        p.active = true AND
-        (LOWER(p.name) LIKE ${searchTerm} OR 
-         LOWER(p.description) LIKE ${searchTerm} OR
-         LOWER(p.sku) LIKE ${searchTerm})
+        id, 
+        name, 
+        description, 
+        price, 
+        image_url, 
+        category, 
+        stock, 
+        sku
+      FROM products 
+      WHERE active = true 
+        AND (
+          LOWER(name) LIKE ${searchTerm} 
+          OR LOWER(description) LIKE ${searchTerm}
+          OR LOWER(sku) LIKE ${searchTerm}
+          OR LOWER(category) LIKE ${searchTerm}
+        )
       ORDER BY 
         CASE 
-          WHEN LOWER(p.name) LIKE ${`${query.toLowerCase()}%`} THEN 1
-          WHEN LOWER(p.name) LIKE ${searchTerm} THEN 2
+          WHEN LOWER(name) LIKE ${searchTerm} THEN 1
+          WHEN LOWER(sku) LIKE ${searchTerm} THEN 2
           ELSE 3
-        END,
-        p.name
+        END
       LIMIT 10
     `
 
     return NextResponse.json({ products })
   } catch (error) {
     console.error("Erro na busca:", error)
-    return NextResponse.json({ products: [] })
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
   }
 }
