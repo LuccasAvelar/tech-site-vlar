@@ -19,7 +19,7 @@ export default function Header() {
   const [showCartModal, setShowCartModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const totalItems = items?.reduce((sum, item) => sum + (item?.quantity || 0), 0) || 0
+  const totalItems = items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   const departments = [
     {
@@ -121,7 +121,7 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2 text-gray-300">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name || "User"} />
+                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                         <AvatarFallback className="bg-cyan-400 text-black">
                           {user.name?.charAt(0)?.toUpperCase() || "U"}
                         </AvatarFallback>

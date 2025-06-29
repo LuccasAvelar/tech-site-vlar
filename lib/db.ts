@@ -2,16 +2,23 @@ import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 
 // Limpar a URL do banco removendo prefixos desnecessários
-function cleanDatabaseUrl(url: string): string {
-  if (!url) return ""
-
-  // Remove prefixos como 'psql ' se existirem
-  const cleaned = url.replace(/^psql\s+['"]?/, "").replace(/['"]$/, "")
-
-  return cleaned
+const cleanDatabaseUrl = (url: string) => {
+  if (url.startsWith("psql '") && url.endsWith("'")) {
+    return url.slice(6, -1)
+  }
+  if (url.startsWith("psql ")) {
+    return url.slice(5)
+  }
+  return url
 }
 
-const sql = neon(cleanDatabaseUrl(process.env.DATABASE_URL || ""))
+const databaseUrl = cleanDatabaseUrl(process.env.DATABASE_URL || "")
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set")
+}
+
+const sql = neon(databaseUrl)
 
 export { sql }
 
