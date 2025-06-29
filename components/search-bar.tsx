@@ -42,9 +42,8 @@ export default function SearchBar() {
       setLoading(true)
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        const data = await response.json()
-
         if (response.ok) {
+          const data = await response.json()
           setResults(data.products || [])
           setIsOpen(true)
         }
@@ -110,7 +109,6 @@ export default function SearchBar() {
                   key={product.id}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 cursor-pointer transition-colors"
                   onClick={() => {
-                    // Aqui você pode adicionar navegação para a página do produto
                     console.log("Produto selecionado:", product)
                     setIsOpen(false)
                   }}

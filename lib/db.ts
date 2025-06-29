@@ -1,9 +1,14 @@
 import { neon } from "@neondatabase/serverless"
+import bcrypt from "bcryptjs"
 
-const sql = neon(
-  process.env.DATABASE_URL ||
-    "postgresql://neondb_owner:npg_QCpNcy4ukKt2@ep-long-boat-a5druwxs-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
-)
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set")
+}
+
+// Limpar a URL removendo prefixos desnecessários
+const cleanUrl = process.env.DATABASE_URL.replace(/^psql\s+['"]?/, "").replace(/['"]?$/, "")
+
+const sql = neon(cleanUrl)
 
 export { sql }
 
@@ -149,7 +154,6 @@ export async function initializeDatabase() {
       `
 
       if (adminExists.length === 0) {
-        const bcrypt = await import("bcryptjs")
         const hashedPassword = await bcrypt.hash("luccasavelar@gmail.com", 12)
 
         await sql`
@@ -172,7 +176,6 @@ export async function initializeDatabase() {
       `
 
       if (admin2Exists.length === 0) {
-        const bcrypt = await import("bcryptjs")
         const hashedPassword = await bcrypt.hash("admin123#", 12)
 
         await sql`
