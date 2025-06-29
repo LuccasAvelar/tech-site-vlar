@@ -1,39 +1,50 @@
 import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { sql } from "@/lib/db"
-
-const JWT_SECRET = process.env.JWT_SECRET || "tech-store-secret-key-2024"
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = cookies()
-    const token = cookieStore.get("auth-token")?.value
-    const fingerprint = cookieStore.get("fingerprint")?.value
+    const sessionCookie = cookieStore.get("vlar-session")
 
-    if (!token || !fingerprint) {
+    if (!sessionCookie) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const sessionData = JSON.parse(sessionCookie.value)
 
-    // Verificar fingerprint
-    if (decoded.fingerprint !== fingerprint) {
-      return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+    // Verificar se a sessão não expirou (7 dias)
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000
+    if (Date.now() - sessionData.loginTime > sevenDaysInMs) {
+      // Sessão expirada, remover cookie
+      cookieStore.delete("vlar-session")
+      return NextResponse.json({ error: "Sessão expirada" }, { status: 401 })
     }
 
+    // Buscar dados atualizados do usuário
     const users = await sql`
-      SELECT id, name, email, phone, birth_date, avatar, is_admin, created_at, updated_at
-      FROM users WHERE id = ${decoded.userId}
+      SELECT id, name, email, phone, birth_date, is_admin, created_at
+      FROM users 
+      WHERE id = ${sessionData.userId}
     `
 
     if (users.length === 0) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
+      cookieStore.delete("vlar-session")
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 401 })
     }
 
-    return NextResponse.json(users[0])
+    const user = users[0]
+
+    return NextResponse.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      birthDate: user.birth_date,
+      isAdmin: user.is_admin,
+    })
   } catch (error) {
-    console.error("Erro na verificação:", error)
-    return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+    console.error("Erro ao verificar autenticação:", error)
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
   }
 }

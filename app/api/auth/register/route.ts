@@ -1,14 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { sql } from "@/lib/db"
 
-const JWT_SECRET = process.env.JWT_SECRET || "tech-store-secret-key-2024"
-
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password, phone, birthDate } = await request.json()
+
+    // Validações básicas
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: "Todos os campos obrigatórios devem ser preenchidos" }, { status: 400 })
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "A senha deve ter pelo menos 6 caracteres" }, { status: 400 })
+    }
 
     // Verificar se email já existe
     const existingUsers = await sql`
@@ -16,56 +22,57 @@ export async function POST(request: NextRequest) {
     `
 
     if (existingUsers.length > 0) {
-      return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 })
+      return NextResponse.json({ error: "Este email já está cadastrado" }, { status: 400 })
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Criar novo usuário
     const result = await sql`
-      INSERT INTO users (name, email, password, phone, birth_date)
-      VALUES (${name}, ${email}, ${hashedPassword}, ${phone}, ${birthDate})
-      RETURNING id, name, email, phone, birth_date, is_admin, created_at, updated_at
+      INSERT INTO users (name, email, password, phone, birth_date, is_admin)
+      VALUES (${name}, ${email}, ${hashedPassword}, ${phone || null}, ${birthDate || null}, FALSE)
+      RETURNING id, name, email, phone, birth_date, is_admin, created_at
     `
 
     const newUser = result[0]
 
-    // Criar fingerprint
-    const userAgent = request.headers.get("user-agent") || ""
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || ""
-    const fingerprint = Buffer.from(`${ip}:${userAgent}`).toString("base64")
+    // Criar sessão simples com cookie
+    const sessionData = {
+      userId: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      isAdmin: newUser.is_admin,
+      loginTime: Date.now(),
+    }
 
-    // Criar JWT
-    const token = jwt.sign(
-      {
-        userId: newUser.id,
-        email: newUser.email,
-        fingerprint,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" },
-    )
-
-    // Configurar cookies
     const cookieStore = cookies()
-    cookieStore.set("auth-token", token, {
+    cookieStore.set("vlar-session", JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: 7 * 24 * 60 * 60, // 7 dias
+      path: "/",
     })
 
-    cookieStore.set("fingerprint", fingerprint, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60,
-    })
-
-    return NextResponse.json(newUser, { status: 201 })
+    return NextResponse.json(
+      {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        birthDate: newUser.birth_date,
+        isAdmin: newUser.is_admin,
+      },
+      { status: 201 },
+    )
   } catch (error) {
     console.error("Erro no registro:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Erro interno do servidor. Tente novamente.",
+      },
+      { status: 500 },
+    )
   }
 }

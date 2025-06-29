@@ -7,14 +7,16 @@ interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<void>
   register: (userData: any) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   isAdmin: boolean
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     checkAuth()
@@ -31,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Erro ao verificar autenticação:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -43,7 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (!response.ok) {
-      throw new Error("Credenciais inválidas")
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Erro ao fazer login")
     }
 
     const userData = await response.json()
@@ -59,7 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (!response.ok) {
-      throw new Error("Erro ao criar conta")
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Erro ao criar conta")
     }
 
     const newUser = await response.json()
@@ -67,11 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    })
-    setUser(null)
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch (error) {
+      console.error("Erro no logout:", error)
+    } finally {
+      setUser(null)
+    }
   }
 
   return (
@@ -82,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         isAdmin: user?.isAdmin || false,
+        loading,
       }}
     >
       {children}
